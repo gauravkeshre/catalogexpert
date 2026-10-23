@@ -169,11 +169,11 @@ test("Advanced composes nested OR under AND and mode switching never discards co
     .toHaveText('developerName contains "Microsoft" AND (Capability (derived) is "Bots" OR Capability (derived) is "Tabs")')
   for (const path of ["1", "2.1", "2.2"]) {
     const bounds = await page.getByRole("group", { name: `Condition ${path}`, exact: true }).boundingBox()
-    expect(bounds.height).toBeLessThanOrEqual(42)
+    expect(bounds.height).toBe(48)
   }
   const firstAlternative = await page.getByRole("group", { name: "Condition 2.1", exact: true }).boundingBox()
   const secondAlternative = await page.getByRole("group", { name: "Condition 2.2", exact: true }).boundingBox()
-  expect(secondAlternative.y - firstAlternative.y).toBeLessThanOrEqual(48)
+  expect(secondAlternative.y - firstAlternative.y).toBe(52)
   await expect(page.getByRole("tab", { name: "Simple", exact: true })).toBeDisabled()
   await page.getByRole("button", { name: "Run query", exact: true }).click()
   await expectResults(page, ["Calendar", "Helper"])
@@ -320,6 +320,71 @@ test("visible rings re-evaluate applied queries and hidden rings never constrain
   await expectResults(page, ["Helper"])
 })
 
+for (const theme of ["Light", "Dark"]) {
+  for (const width of [1440, 320]) {
+    test(`filter controls follow the shadcn preset in ${theme} at ${width}px`, async ({ page }) => {
+      await page.getByRole("group", { name: "Appearance", exact: true }).getByRole("button", { name: theme, exact: true }).click()
+      await addCondition(page, "Developer", "Microsoft")
+      await page.getByRole("tab", { name: "Advanced", exact: true }).click()
+      await page.getByRole("button", { name: "Add group", exact: true }).click()
+      await choose(page, "Field 2.1", "bots")
+      await page.getByRole("spinbutton", { name: "Value 2.1", exact: true }).fill("1")
+      await expect(page.getByRole("group", { name: "Array items 2.1", exact: true })).toBeVisible()
+      await page.setViewportSize({ width, height: 1000 })
+      const editor = page.getByRole("region", { name: "Query editor", exact: true })
+
+      async function expectSquareCorners() {
+        const rounded = await page.evaluate(() => [...document.querySelectorAll("body *")]
+          .filter((element) => element.getClientRects().length > 0)
+          .filter((element) => {
+            const styles = getComputedStyle(element)
+            return [styles.borderTopLeftRadius, styles.borderTopRightRadius, styles.borderBottomRightRadius, styles.borderBottomLeftRadius]
+              .some((radius) => parseFloat(radius) > 0)
+          })
+          .map((element) => `${element.tagName}: ${element.getAttribute("class") || ""}`))
+        expect(rounded).toEqual([])
+      }
+
+      await expectSquareCorners()
+      await expect(editor).toHaveAttribute("data-slot", "card")
+      const buttons = await editor.locator('[data-slot="button"]').evaluateAll((elements) =>
+        elements.map((element) => {
+          const styles = getComputedStyle(element)
+          return {
+            fontSize: styles.fontSize, fontWeight: styles.fontWeight,
+            letterSpacing: styles.letterSpacing, textTransform: styles.textTransform,
+          }
+        }))
+      expect(buttons.length).toBeGreaterThan(0)
+      for (const styles of buttons) {
+        expect(styles).toEqual({ fontSize: "12px", fontWeight: "600", letterSpacing: "1.2px", textTransform: "uppercase" })
+      }
+      for (const control of [
+        page.getByRole("combobox", { name: "Field 1", exact: true }),
+        page.getByRole("textbox", { name: "Value 1", exact: true }),
+      ]) {
+        await expect(control).toHaveCSS("height", "40px")
+        await expect(control).toHaveCSS("background-color", "rgba(0, 0, 0, 0)")
+        for (const side of ["top", "right", "left"]) {
+          await expect(control).toHaveCSS(`border-${side}-color`, "rgba(0, 0, 0, 0)")
+        }
+        await expect(control).toHaveCSS("border-bottom-width", "1px")
+        await control.focus()
+        await expect(control).toHaveCSS("box-shadow", "none")
+      }
+      expect(await editor.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+      expect(await page.locator("main").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+      await page.getByRole("combobox", { name: "Field 1", exact: true }).click()
+      await expect(page.getByRole("listbox")).toBeVisible()
+      await expectSquareCorners()
+      await page.keyboard.press("Escape")
+      await editor.getByRole("button", { name: "Save query", exact: true }).click()
+      await expect(page.getByRole("dialog", { name: "Save query", exact: true })).toBeVisible()
+      await expectSquareCorners()
+    })
+  }
+}
+
 test("query workspace stays within narrow screens and supports dark mode and keyboard tabs", async ({ page }) => {
   await addCondition(page, "Capability", { choice: "Bots" })
   await page.getByRole("tab", { name: "Advanced", exact: true }).click()
@@ -339,7 +404,7 @@ test("query workspace stays within narrow screens and supports dark mode and key
     expect(await page.locator("main").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
     for (const path of ["1", "2.1"]) {
       const bounds = await page.getByRole("group", { name: `Condition ${path}`, exact: true }).boundingBox()
-      expect(bounds.height).toBeLessThanOrEqual(width >= 640 ? 42 : 92)
+      expect(bounds.height).toBeLessThanOrEqual(width >= 640 ? 48 : 92)
     }
     if (width === 390) {
       await page.locator("main").evaluate((element) => { element.scrollTop = 0 })

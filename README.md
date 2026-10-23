@@ -71,11 +71,13 @@ Its count reflects the applied query, not draft edits, and starts at zero before
 
 Simple mode combines condition rows with AND: every condition must match.
 Advanced mode supports AND / OR at the query level and within nested groups.
-Condition rows use inline field / operator / value controls, a Where / AND / OR gutter, and softly outlined nested filter groups.
-Desktop scalar rows stay compact; mobile controls wrap onto two lines.
+Condition rows use inline field / operator / value controls, a Where / AND / OR gutter, and outlined nested filter groups.
+The editor uses the Card, Select, Input, and Button components from shadcn preset `b3Sm9Q7NQ`.
+It retains the preset's square corners, underline controls, focus styles, and button typography.
+Desktop controls use the preset's 40px height. Mobile controls wrap onto two lines.
 In Advanced, the connector dropdown beside the second rule changes the logic for the entire group.
 For fewer than two rules, the same control appears above the rules.
-Add filter adds a condition; Add nested filter creates a separate logical group.
+Add filter adds a condition. Add nested filter creates a separate logical group.
 Clear group removes only that group's rules, not its siblings or the applied results.
 Use "All (AND)" for every condition, "Any (OR)" for alternatives, or "None (NOT)" to exclude a group.
 For example, combine developerName is Microsoft with a group matching bot or tab property conditions.

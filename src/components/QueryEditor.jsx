@@ -2,6 +2,7 @@ import { useState } from "react"
 import { IconBrackets, IconChevronRight, IconDeviceFloppy, IconFilter, IconPlayerPlay, IconPlus, IconSparkles, IconTrash, IconX } from "@tabler/icons-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -17,12 +18,12 @@ import { presetQueries } from "@/lib/preset-queries"
 function QuerySelect({ label, value, items, onChange, connector = false }) {
   return (
     <Select value={value} onValueChange={onChange} items={items}>
-      <SelectTrigger size="sm" aria-label={label} className={`w-full min-w-0 rounded-lg border-input bg-background px-2 py-1 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 sm:data-[size=sm]:h-8 ${
-        connector ? "gap-0 px-0.5 text-[10px] [&>svg]:hidden sm:gap-1 sm:px-1.5 sm:text-xs sm:[&>svg]:block" : ""
+      <SelectTrigger aria-label={label} className={`w-full min-w-0 ${
+        connector ? "gap-0 [&>svg]:hidden sm:gap-1.5 sm:[&>svg]:block" : ""
       }`}>
         <SelectValue>{connector ? (value === "all" ? "AND" : value === "any" ? "OR" : "NOT") : undefined}</SelectValue>
       </SelectTrigger>
-      <SelectContent alignItemWithTrigger={false} className="rounded-lg">
+      <SelectContent alignItemWithTrigger={false}>
         {items.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
       </SelectContent>
     </Select>
@@ -80,18 +81,18 @@ function Condition({ condition, onChange, onRemove, path, schema, derived, simpl
             ? <QuerySelect label={`Value ${path}`} value={condition.value}
                 items={field.values.map(({ id, title }) => ({ value: id, label: title }))}
                 onChange={(value) => onChange({ ...condition, value })} />
-            : <Input className="h-9 rounded-lg border-input bg-background px-2 py-1 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 sm:h-8" aria-label={`Value ${path}`}
+            : <Input aria-label={`Value ${path}`}
                 type={numeric ? "number" : "text"} step={field.type === "array" ? 1 : "any"} min={field.type === "array" ? 0 : undefined}
                 placeholder={field.type === "array" ? "Item count" : `Enter ${field.label}...`}
                 value={condition.value} onChange={(event) => onChange({ ...condition, value: event.target.value })} />
-            : <span className="inline-flex h-9 items-center px-2 text-xs text-muted-foreground sm:h-8">No value needed</span>}
+            : <span className="inline-flex h-10 items-center text-xs text-muted-foreground">No value needed</span>}
         </div>
         <Button variant="ghost" size="icon-sm"
-          className="col-start-3 row-span-2 row-start-1 justify-self-end rounded-lg text-muted-foreground hover:text-destructive sm:col-start-4 sm:row-span-1 sm:size-8"
+          className="col-start-3 row-span-2 row-start-1 justify-self-end sm:col-start-4 sm:row-span-1"
           aria-label={`Remove condition ${path}`}
           title="Remove condition" onClick={onRemove}><IconX /></Button>
       </div>
-      {showItems && <div className="mt-1 min-w-0 space-y-2 rounded-lg border bg-background/60 p-2" role="group" aria-label={`Array items ${path}`}>
+      {showItems && <div className="mt-1 min-w-0 space-y-2 border bg-background/60 p-2" role="group" aria-label={`Array items ${path}`}>
         <div className="flex flex-wrap items-center gap-x-2 text-xs">
           <div className="w-32 max-w-full"><QuerySelect label={`Item match ${path}`} value={condition.quantifier}
             items={[{ value: "any", label: "Any item" }, { value: "all", label: "All items" }]}
@@ -118,21 +119,21 @@ function Group({ group, onChange, simple, path = "", onRemove, schema, derived, 
     items={[{ value: "all", label: "All (AND)" }, { value: "any", label: "Any (OR)" }, { value: "none", label: "None (NOT)" }]}
     onChange={(match) => onChange({ ...group, match })} connector />
   return (
-    <div className={`min-w-0 space-y-2 ${itemScope ? "" : "rounded-xl border bg-muted/25 p-2 sm:p-3"}`}
+    <div className={`min-w-0 space-y-2 ${itemScope ? "" : "border bg-muted/25 p-2 sm:p-3"}`}
       role="group" aria-label={path ? `Condition group ${path}` : "Query conditions"}>
       {(!simple && group.children.length < 2 || group.match === "none" || onRemove) && <div className="flex min-w-0 items-center gap-2">
         {!simple && group.children.length < 2 && <div className="w-16 shrink-0">{matchControl}</div>}
         <p className="min-w-0 text-xs text-muted-foreground">
           {group.match === "none" ? "Exclude matches to any rule in this group" : path && !itemScope ? "Nested filter" : "Combine filters"}
         </p>
-        {onRemove && <Button variant="ghost" size="icon-sm" className="ml-auto rounded-lg text-muted-foreground hover:text-destructive sm:size-8"
+        {onRemove && <Button variant="ghost" size="icon-sm" className="ml-auto"
           aria-label={`Remove group ${path}`} title="Remove group" onClick={onRemove}><IconX /></Button>}
       </div>}
       <div className="space-y-1">
         {group.children.map((child, index) => {
           const childPath = `${path ? `${path}.` : ""}${index + 1}`
           return <div key={child.id} className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-1 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-x-2">
-            <div className="flex h-11 min-w-0 items-center text-[10px] text-muted-foreground sm:h-10 sm:text-xs">
+            <div className="flex h-12 min-w-0 items-center text-[10px] text-muted-foreground sm:text-xs">
               {index === 1 && !simple ? matchControl : <span className="px-0.5 sm:px-2">
                 {index === 0 ? "Where" : group.match === "all" ? "AND" : "OR"}
               </span>}
@@ -145,22 +146,22 @@ function Group({ group, onChange, simple, path = "", onRemove, schema, derived, 
           </div>
         })}
       </div>
-      {!group.children.length && <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+      {!group.children.length && <p className="border border-dashed p-3 text-sm text-muted-foreground">
         {itemScope ? "No item conditions. Only the count is filtered." : path ? "Add a condition to this group." : "No conditions yet. Run as-is to see all apps, or add a condition to narrow the catalog."}
       </p>}
       <div className="flex flex-wrap items-center gap-2 border-t border-dashed pt-2">
-        <Button variant="outline" size="sm" aria-label="Add condition" className="rounded-lg bg-background px-2 text-xs font-medium tracking-normal normal-case sm:h-8 sm:px-3"
+        <Button variant="outline" size="sm" aria-label="Add condition"
           onClick={() => onChange({ ...group, children: [...group.children, createCondition(defaultField(schema), undefined, schema)] })}>
           <IconPlus /><span className={path ? "hidden sm:inline" : ""}>Add filter</span>{path && <span className="sm:hidden">Rule</span>}
         </Button>
-        {!simple && <Button variant="ghost" size="sm" aria-label="Add group" className="rounded-lg px-2 text-xs font-medium tracking-normal normal-case sm:h-8 sm:px-3"
+        {!simple && <Button variant="ghost" size="sm" aria-label="Add group"
           onClick={() => onChange({ ...group, children: [...group.children, {
             ...createGroup(), children: [createCondition(defaultField(schema), undefined, schema)],
           }] })}>
           <IconBrackets /><span className={path ? "hidden sm:inline" : ""}>Add nested filter</span>{path && <span className="sm:hidden">Group</span>}
         </Button>}
         {(path || itemScope) && group.children.length > 0 && <Button variant="ghost" size="sm"
-          className="ml-auto rounded-lg px-2 text-xs font-medium tracking-normal text-muted-foreground normal-case sm:h-8"
+          className="ml-auto"
           aria-label={`Clear group ${path}`} onClick={() => onChange({ ...group, children: [] })}>Clear group</Button>}
       </div>
     </div>
@@ -192,7 +193,7 @@ export default function QueryEditor({ query, onChange, mode, onModeChange, onRun
   }
 
   return (
-    <div className="min-w-0 rounded-2xl border bg-card shadow-sm" role="region" aria-label="Query editor">
+    <Card className="min-w-0 gap-0 py-0" role="region" aria-label="Query editor">
       {saved.error && <p role="alert" className="border-b p-3 text-sm text-destructive">{saved.error}</p>}
       <Tabs value={mode} onValueChange={onModeChange} className="min-w-0 gap-0">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 border-b px-3 py-1 sm:px-4">
@@ -257,7 +258,7 @@ export default function QueryEditor({ query, onChange, mode, onModeChange, onRun
           </div>
         </TabsContent>
       </Tabs>
-      <div className="space-y-3 rounded-b-2xl border-t bg-muted/20 p-3 sm:p-4">
+      <div className="space-y-3 border-t bg-muted/20 p-3 sm:p-4">
         <div>
           <p className="mb-1 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">Query preview</p>
           <p className="text-sm leading-relaxed break-words" aria-label="Query preview">{describeQuery(query, schema)}</p>
@@ -293,6 +294,6 @@ export default function QueryEditor({ query, onChange, mode, onModeChange, onRun
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   )
 }
