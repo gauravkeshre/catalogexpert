@@ -57,3 +57,7 @@ build/
 # Backup files
 *.bak
 *.backup
+
+# Browser test output
+test-results/
+playwright-report/
