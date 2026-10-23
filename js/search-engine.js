@@ -2,7 +2,7 @@
  * Search Engine Module
  * Handles all search and filtering functionality for the Teams App Catalog Explorer
  */
-class SearchEngine {
+export class SearchEngine {
     constructor(appDefinitions, appEntitlements) {
         this.appDefinitions = appDefinitions;
         this.appEntitlements = appEntitlements;

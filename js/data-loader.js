@@ -14,6 +14,7 @@ class DataLoader {
         
         // URL-based caching to avoid fetching the same files multiple times
         this.urlCache = new Map(); // URL -> Promise<data>
+        this.failedSources = new Set();
         this.urlToAudienceGroups = new Map(); // URL -> Set<audienceGroup>
         
         // Callback functions to communicate with parent
@@ -56,6 +57,7 @@ class DataLoader {
             this.updateBlockingLoader(`📥 Loaded ${this.loadedSources}/${this.totalSources} data sources...`, progressPercent);
             return data;
         }).catch(error => {
+            this.failedSources.add(url);
             // Update progress counter even on error
             this.loadedSources++;
             const progressPercent = Math.floor((this.loadedSources / this.totalSources) * 30) + 30;
@@ -359,10 +361,11 @@ class DataLoader {
             }
         });
         
-        document.getElementById('totalApps').textContent = uniqueApps.size;
-        document.getElementById('loadedSources').textContent = this.loadedSources;
-        document.getElementById('entitlementConfigs').textContent = uniquePreconfiguredEntitlements.size;
-        document.getElementById('catalogStats').style.display = 'grid';
+        this.updateStats({
+            totalApps: uniqueApps.size,
+            loadedSources: this.loadedSources,
+            entitlementConfigs: uniquePreconfiguredEntitlements.size
+        });
     }// Get app information
     getAppInfo(appId) {
         const audienceMap = this.appDefinitions.get(appId);
@@ -391,3 +394,5 @@ class DataLoader {
 
 // Export for use in other modules
 window.DataLoader = DataLoader;
+
+export { DataLoader };

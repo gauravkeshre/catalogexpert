@@ -111,17 +111,19 @@ try {
         
         if (Test-Path $filePath) {
             try {
-                $content = Get-Content $filePath -Raw -Encoding UTF8
+                $content = [System.IO.File]::ReadAllBytes($filePath)
                 $response.ContentType = switch ([System.IO.Path]::GetExtension($filePath)) {
                     ".html" { "text/html; charset=utf-8" }
                     ".css"  { "text/css; charset=utf-8" }
                     ".js"   { "application/javascript; charset=utf-8" }
                     ".json" { "application/json; charset=utf-8" }
+                    ".woff2" { "font/woff2" }
+                    ".svg" { "image/svg+xml" }
                     default { "text/plain; charset=utf-8" }
                 }
                 
                 if ($content -ne $null) {
-                    $buffer = [System.Text.Encoding]::UTF8.GetBytes($content)
+                    $buffer = $content
                     $response.ContentLength64 = $buffer.Length
                     $response.OutputStream.Write($buffer, 0, $buffer.Length)
                 } else {

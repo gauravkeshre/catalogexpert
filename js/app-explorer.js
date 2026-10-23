@@ -243,6 +243,8 @@ class TeamsAppCatalogExplorer {
      */
     updateStats() {
         this.uiRenderer.updateStats();
+        document.getElementById('loadedSources').textContent = this.dataLoader.loadedSources;
+        document.getElementById('entitlementConfigs').textContent = this.appEntitlements.size;
     }    /**
      * Show all available apps
      */

@@ -1,379 +1,271 @@
-# Microsoft Teams App Catalog Explorer
+# App Definitions Explorer
 
-> 🤖 **Built by LukasAgent** - An AI Assistant specialized in Microsoft Teams application development
+Search Microsoft Teams app definitions and inspect configured entitlements.
 
-A powerful web-based tool for exploring and analyzing Microsoft Teams application catalogs, with detailed information about app definitions and preconfigured entitlement states across different audience groups.
+## Run
 
-![Microsoft Teams App Catalog Explorer](https://img.shields.io/badge/Microsoft-Teams-5059C9?style=flat&logo=microsoft-teams&logoColor=white)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
+Use Node.js 22.12 or later.
 
-## 🌟 Features
-
-### 📱 App Search & Discovery
-- **Multi-criteria search**: Search by App ID, name, developer, Office Asset ID, version, or description
-- **Advanced search operators**: Support for wildcards (`*`), AND/OR operators for complex queries
-- **Real-time search**: Instant results as you type
-- **Smart sorting**: Apps with entitlements prioritized, then alphabetical
-
-### 🔐 Entitlement States Analysis
-- **Visual entitlement mapping**: See which apps have preconfigured entitlements
-- **State-based grouping**: Apps organized by entitlement states (Installed, InstalledAndPermanent, PreConsented, etc.)
-- **Audience group filtering**: Filter entitlements by specific audience groups
-- **Interactive state cards**: Click to drill down into specific entitlement states
-
-### 📊 Comprehensive App Details
-- **Multi-audience support**: View app versions across different audience groups
-- **Detailed app information**: Developer details, manifest versions, descriptions
-- **Tabbed modal interface**: Organized presentation of app data with Overview, Versions, Entitlements, Definition, and Technical tabs
-- **Enhanced Definition tab**: 
-  - **Version-based grouping**: Apps organized by unique versions with multiple audience bubbles
-  - **Collapsible sections**: All version sections collapsed by default with expand/collapse functionality
-  - **Comprehensive property display**: 107+ app properties organized into 15 logical categories
-  - **Smart property formatting**: Handles 8+ data types (text, URLs, colors, objects, arrays, dates, codes, booleans)
-  - **Interactive elements**: Collapsible JSON viewers, color swatches, clickable links
-  - **Professional styling**: Categorized layout with responsive design and hover effects
-- **Entitlement visualization**: Color-coded state badges with icons and detailed drill-down
-
-### 🎯 Advanced Filtering
-- **Global audience filters**: Filter all data by audience groups
-- **Dynamic filter updates**: Real-time filtering without page reloads
-- **Filter persistence**: Selections maintained while navigating
-
-### 🚀 Performance & UX
-- **Enhanced loading screen**: Progress indicators with real-time statistics
-- **Caching system**: Efficient data loading with request deduplication
-- **Responsive design**: Works on desktop and mobile devices
-- **Error handling**: Graceful error recovery with retry functionality
-
-## 🏗️ Architecture
-
-### Core Modules
-
-| Module | Purpose |
-|--------|---------|
-| `app-explorer.js` | Main application coordinator and state management |
-| `data-loader.js` | Handles catalog configuration and data loading |
-| `search-engine.js` | Advanced search functionality with multiple algorithms |
-| `ui-renderer.js` | DOM manipulation and UI rendering |
-| `modal-manager.js` | Modal dialogs and detailed app views |
-| `event-handlers.js` | User interaction and event management |
-| `utils.js` | Utility functions and constants |
-
-### Data Flow
-```
-Catalog Configs → Data Loader → App Definitions + Entitlements → Search Engine → UI Renderer
-                                        ↓
-                               Modal Manager ← Event Handlers
+```sh
+npm ci
+npm run dev
 ```
 
-## 🚀 Quick Start
+Open the local URL from Vite.
+The explorer uses the local catalog cache when available.
+The first load requires a network connection and permission from the remote server.
+The explorer does not read local credentials or provide Microsoft sign-in.
 
-### Prerequisites
-- Web server capability (built-in PowerShell server included)
-- Modern web browser with JavaScript enabled
-- Microsoft Teams catalog configuration files
+## Interface
 
-### Installation & Setup
+The interface uses React, Vite, Tailwind CSS, and shadcn preset `b3Sm9Q7NQ`.
+It retains Sera's square corners, button typography, and underlined fields.
+Lime controls use darker text, as requested.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Lukaze/catalogexpert.git
-   cd catalogexpert
-   ```
+The sidebar contains Advanced, Library, and Entitlement states.
+Advanced is the query workspace, available without selecting a preset.
+Settings and the Light / Dark / System controls sit at the bottom.
+Narrow windows use a navigation drawer.
 
-2. **Start the development server**
-   ```powershell
-   .\start-server.ps1
-   ```
-   The server will:
-   - Check if port 8080 is available
-   - Start a local HTTP server (or reuse existing)
-   - Automatically open your browser
-   - Display the application at `http://localhost:8080`
+The library starts with six preset queries: Custom Engine Agents, Declarative Agents, Bots, Tabs, Bot Only Apps, and Message Extensions.
+Each tile previews matching apps instead of emphasizing counts.
+Desktop shows up to five app icons and names; mobile shows up to four compact app icons to retain square tiles.
+Click an app preview to open its details directly without leaving Library.
+Preview buttons have app-name tooltips and accessible labels, and return keyboard focus when details close.
+Details contain only variants matching that tile's query and ring filter.
+Tiles use the same result ordering as Advanced and show each app once, independently of Library text search.
+The smaller View all action runs the query in Advanced; its count shows the total, not just the previewed apps.
+Empty tiles say No matching apps; missing or failed images use an initial.
+Descriptions remain available to screen readers and in the tile picker.
+Use the pencil icon beside Preset queries to choose from all built-in presets and saved queries.
+Choose Create query in the picker to build and save another query in Advanced.
+Advanced and the picker use the same saved-query list.
+Desktop and mobile selections are independent and saved in this browser.
+Selection order sets tile order; uncheck and recheck a query to move it to the end.
+Desktop keeps six configurable rectangular tiles in three columns and two rows.
+Replace one selection before adding another tile.
+The saved-query list can grow without adding dashboard slots.
+Below 768 pixels, mobile shows up to four square tiles in two columns and two rows.
+Mobile starts with the first four default presets and keeps descriptions available to screen readers.
+Saved-query tiles run the current saved conditions, respect ring filters, and update their counts when the query changes.
+Deleting a saved query replaces its desktop tile with an unused default.
+Cancel leaves selections unchanged. Browser-storage failures show a notice.
+Counts use detected capabilities and the current ring filter, not text search.
+One app can match multiple queries.
+Bot Only Apps includes variants where the explorer detects bots but no other supported capability.
+Choose View all to show matching apps in Advanced.
+The preset becomes editable conditions on actual definition properties and runs immediately.
+Advanced shows the loaded conditions directly, without a starting-point banner; results appear below the editor.
 
-3. **Load your catalog data**
-   - Place your catalog configuration files in the `/samples` directory
-   - The application will automatically detect and load them
-   - Supported file patterns:
-     - `catalogConfig*.json` - Main catalog configurations
-     - `store_*.json` - App store definitions
-     - `preconfigured_appentitlements_*.json` - Entitlement configurations
+SPFx Apps is an additional built-in preset, not pinned by default.
+It matches `{teamSiteDomain}` or `{mySiteDomain}` case-insensitively in tab `contentUrl` / `configurationUrl` fields
+and messaging-extension command `taskInfo.url` fields, including their catalog equivalents.
+The generated query uses editable property conditions, not a new derived capability.
+This is a URL-based heuristic: it does not certify SPFx packaging, and apps using hardcoded tenant URLs can be missed.
+The SharePoint-hosted URL patterns follow [Microsoft's SPFx deployment guidance](https://learn.microsoft.com/en-us/sharepoint/dev/spfx/deployment-spfx-teams-solutions).
 
-## 📁 Project Structure
+### Advanced queries
 
-```
-CatalogExpert/
-├── index.html                 # Main application interface
-├── main.css                   # Base styling and layout
-├── start-server.ps1           # PowerShell development server
-├── build-production.ps1       # Production build script
-├── README.md                  # Project documentation
-├── css/                       # Modular CSS organization
-│   ├── base.css               # Core styles and variables
-│   ├── header.css             # Header and navigation styling
-│   ├── search.css             # Search interface styles
-│   ├── search-results.css     # Search results and app tiles
-│   ├── entitlements.css       # Entitlement visualization
-│   ├── entitlement-states.css # State cards and filtering
-│   ├── modals.css             # Modal dialog styles
-│   ├── modal-tabs.css         # Tabbed interface and Definition tab
-│   ├── state-modals.css       # State details modal styling
-│   └── loaders.css            # Loading animations and states
-├── js/                        # JavaScript modules
-│   ├── app-explorer.js        # Main application controller
-│   ├── data-loader.js         # Data loading and caching
-│   ├── search-engine.js       # Search algorithms and filtering
-│   ├── ui-renderer.js         # UI rendering and DOM management
-│   ├── event-handlers.js      # Event management and user interactions
-│   ├── utils.js               # Utility functions and constants
-│   └── modules/               # Specialized modules
-│       ├── app-modal-renderer.js     # App detail modal rendering
-│       ├── definition-renderer.js    # Definition tab rendering
-│       ├── modal-manager.js          # Modal state management
-│       └── state-modal-manager.js    # State detail modals
-├── docs/                      # Production build output (auto-generated)
-│   ├── index.html             # Minified HTML
-│   ├── main.css               # Combined and minified CSS
-│   ├── css/                   # Minified CSS modules
-│   └── js/                    # Minified JavaScript modules
-└── samples/                   # Sample data files
-    ├── catalogConfig SAMPLE.json
-    ├── preconfigured_appentitlements_general.json
-    └── store_global_0.json
-```
+Advanced uses the same compact count-and-sync heading as Library, with Refresh beside it.
+Its count reflects the applied query, not draft edits, and starts at zero before a query runs.
 
-## 🔧 Configuration
+Simple mode combines condition rows with AND: every condition must match.
+Advanced mode supports AND / OR at the query level and within nested groups.
+Condition rows use inline field / operator / value controls, a Where / AND / OR gutter, and outlined nested filter groups.
+The editor uses the Card, Select, Input, and Button components from shadcn preset `b3Sm9Q7NQ`.
+It retains the preset's square corners, underline controls, focus styles, and button typography.
+Desktop controls use the preset's 40px height. Mobile controls wrap onto two lines.
+In Advanced, the connector dropdown beside the second rule changes the logic for the entire group.
+For fewer than two rules, the same control appears above the rules.
+Add filter adds a condition. Add nested filter creates a separate logical group.
+Clear group removes only that group's rules, not its siblings or the applied results.
+Use "All (AND)" for every condition, "Any (OR)" for alternatives, or "None (NOT)" to exclude a group.
+For example, combine developerName is Microsoft with a group matching bot or tab property conditions.
+The live query preview shows parentheses explicitly.
+Both modes edit the same query.
+Simple mode is unavailable while the query contains OR or nested groups, so switching modes cannot silently change its meaning.
 
-### Catalog Configuration Format
-The application expects JSON files with the following structure:
+Property selectors show actual app-definition keys, such as id, developerName, and webApplicationInfo.
+Known catalog shapes keep common optional properties available; loaded definitions supply additional properties, nesting, and observed types.
+Known shapes stay available across catalog refreshes in this session.
+Operators adapt to strings, numbers, booleans, objects, and arrays.
+For mixed-type properties, choose which observed type to query.
+Object properties expose further selectors, such as webApplicationInfo.id or webApplicationInfo.resource.
+Computed capability and configured entitlement-state shortcuts are explicitly labelled; they are not manifest keys.
+Text matching is case-insensitive and literal; text values do not interpret wildcards or AND / OR.
+Version fields use text comparisons, not semantic-version ordering.
+Numbers support equality, inequality, and ordering.
+Arrays default to a numeric count condition; missing or null arrays have count zero.
+Counts must be non-negative whole numbers.
+When a count can match non-empty arrays, item conditions become available.
+Choose Any item or All items, and combine rules against the same item.
+All items with item conditions requires a non-empty array; empty arrays do not pass vacuously.
+Nested item arrays support their own counts and item rules.
+Primitive arrays, such as scopes or categories, expose Item value.
+Object arrays expose their actual keys and Item itself for object-presence checks.
+Count conditions that cannot match any items cannot run with active item rules; those rules remain visible until removed.
+Boolean No requires an explicit false, not an absent property.
+Objects support presence and empty-object checks.
+Missing fields match negative operators and "is empty".
+All conditions must match within the same app variant.
+Entitlement-state conditions use entitlements from that variant's ring.
+Apps are counted once, and Advanced details include only matching variants.
+The optional ring filter limits Advanced results as it does Library results.
 
-```json
-{
-  "MicrosoftTeamsAppCatalog": {
-    "appCatalog": {
-      "stores": {
-        "sources": ["url1", "url2"]
-      },
-      "preconfiguredAppEntitlements": {
-        "sources": ["entitlement-url1", "entitlement-url2"]
-      }
-    }
-  }
-}
-```
+Choose Run query to apply the current conditions.
+An empty query returns all apps.
+Blank values and empty nested groups cannot run.
+Edits retain the previous results with an "Unapplied changes" notice and a separate applied-query summary until you run again.
+Clear query resets the draft, not the previous results.
+Queries and drafts survive page navigation independently of the Library search.
+Unsaved drafts do not survive reloads.
+Ring changes and catalog refreshes re-evaluate the applied query automatically.
+Results retain Grid / List views, pagination, and app details.
+The editor and results stay on one page.
 
-### Supported Entitlement States
-- 🔒 **InstalledAndPermanent**: Cannot be uninstalled by users
-- 🟢 **Installed**: Can be uninstalled by users
-- ✅ **PreConsented**: Silently installed on first use
-- ⭐ **Featured**: Featured apps requiring user installation
-- ❌ **NotInstalled**: Grandfathered state for existing tabs
-- ⚠️ **InstalledAndDeprecated**: Marked for deprecation
-- 🚫 **HiddenFromAppStore**: Hidden from all discovery
+The rightmost Presets tab contains all six built-in queries with their property conditions.
+Loading a preset from this tab changes the draft without running it.
+Tune its conditions, then choose Run query.
+Bot Only Apps uses a None group to exclude other capabilities.
+Built-in query conditions use the same capability property mapping as the Library tiles.
 
-## 🎨 Features Deep Dive
+Save query sits at the card's bottom-right.
+Choose a name to persist the conditions in this browser and retrieve them from Saved queries in the Presets tab.
+Saving an existing name replaces its conditions after a visible warning in the save dialog.
+Saved queries can be deleted from the tab.
+Saves do not include catalog data, ring selections, or display preferences.
+Storage failures retain the draft and show an error rather than reporting success.
 
-### Search Capabilities
-- **Wildcard Search**: Use `*` for partial matches (`micro*` finds Microsoft apps)
-- **Boolean Operators**: Combine terms with `AND` and `OR`
-- **Multi-field Search**: Searches across app names, IDs, developers, descriptions
-- **Real-time Results**: Instant filtering as you type
+Every Export results button opens a chooser before downloading.
+Choose Full dump, or Selected fields with any combination of App Name, App ID, and Developer.
+All exports include every matching app, not just the current page.
+Full dump writes catalog-results.json with the applied query, selected audience, unique app count, and matching definition variants.
+Selected fields writes catalog-results-fields.json as one JSON entry per unique app, containing only the selected name, id, and/or developerName keys.
+Field-only exports contain no query metadata or raw definitions; unavailable names or developers are null.
+Names and developers come from the displayed matching variant, respecting the current ring filter.
+At least one field must be selected; Cancel closes the chooser without downloading.
+Unapplied draft edits are not exported.
+The Library also exports its complete current result set.
+Raw definitions retain source properties and ring information regardless of display preferences.
+Empty result sets disable export; download failures show an error.
 
-### Entitlement Analysis
-- **State Visualization**: Color-coded badges for different entitlement states
-- **Audience Filtering**: View entitlements specific to audience groups
-- **Detailed Drill-down**: Click state cards to see all apps in that state
-- **Cross-reference**: See which audience groups have specific entitlements
+**TODO: Prompt to query.** Its dedicated tab is a placeholder for turning natural-language prompts into editable conditions.
+It does not call an AI service or generate queries.
 
-### Definition Tab Features
-- **Version-Based Organization**: Apps grouped by unique versions instead of audience groups for cleaner presentation
-- **Smart Version Sorting**: Semantic version sorting with newest versions displayed first
-- **Multiple Audience Display**: Shows all audience groups (R4, R3, R2, R1) that share the same version as bubbles
-- **Collapsible Interface**: All version sections collapsed by default with intuitive expand/collapse controls
-- **Comprehensive Property Display**: 107+ app properties organized into 15 logical categories:
-  - Core App Properties, Developer Information, Security & Permissions
-  - App Capabilities, Display & UI, Tenant & Identity
-  - Localization, Business & Marketplace, Configuration
-  - Status & Metadata, Office Add-ins, App Enhancement Features
-  - MetaOS Features, Copilot & AI Features, Security & Compliance
-- **Advanced Data Type Handling**: 
-  - **Text**: Proper typography and styling
-  - **Colors**: Visual color swatches with hex values
-  - **URLs**: Clickable links with external indicators
-  - **Objects**: Collapsible JSON viewers for complex data
-  - **Arrays**: Formatted lists with proper spacing
-  - **Booleans**: Visual checkmarks and X marks
-  - **Dates**: Formatted date strings
-  - **Codes**: Monospace styling for technical identifiers
-- **Interactive Elements**: Hover effects, expandable sections, and responsive design
-- **Professional Layout**: Clean categorization with gradient headers and consistent spacing
+Use Grid view for app cards or List view for the table.
+Cards show the app icon, name, and developer.
+Both views retain pagination and app details.
+The view choice stays in browser storage.
 
-### Data Management
-- **Intelligent Caching**: Reduces redundant network requests
-- **Progressive Loading**: Shows progress during data fetching
-- **Error Recovery**: Graceful handling of failed requests
-- **Source Tracking**: View all loaded data sources
+The library shows 25 apps per page.
+Search supports app names, IDs, developers, Office asset IDs, versions, descriptions, wildcards, AND, and OR.
+App details retain summary, versions, entitlements, complete properties, technical fields, and JSON.
+Click anywhere on an app row to open its details, or use the app name or arrow button with the keyboard.
+The summary provides an App ID copy button and badges for app capabilities, including Teams ownership.
+The JSON tab can copy the complete selected variant, including fields hidden by preferences.
+Copy actions report success or clipboard access errors.
+The Definition tab presents nested key-value pairs with quote-left icons for values, braces for objects, and brackets for arrays.
+Version Information appears first, followed by Core App Properties.
+Other Properties retains fields without a named group.
+Groups show only available fields, with each property shown once.
+Ring preferences also apply to Definition fields.
+Quote-left uses Font Awesome Free Solid; the Pro Duotone style is not bundled.
+Objects and arrays expand to reveal typed child properties.
+Search keys, values, or paths to reveal matching fields and their ancestors, or use the expand and collapse controls to browse.
+Definition search covers all groups and hides groups without matching fields.
+The entitlement page provides state groups and a state reference.
+Enable statistics to show a compact strip of totals and inspect loaded source URLs.
 
-## 🛠️ Development
+Settings control ring information, statistics, descriptions, identifiers, and entitlement summaries.
+Ring information is off by default.
+Hidden rings do not restrict results.
+Raw JSON retains source fields regardless of preferences.
+Settings stay in browser storage.
+Storage failures show a notice.
 
-### Local Development
-```powershell
-# Start development server
-.\start-server.ps1
+Catalog data stays in IndexedDB in this browser.
+Reloads use the saved data without requesting catalog configurations, definitions, or entitlements.
+The Library heading is one line: "Showing X of Y apps, synced on <DateTime>", with Refresh beside it.
+X counts apps matching the current search and ring filter; Y counts all loaded apps.
+Pagination stays at 25 apps per page.
+Hover over the summary to see whether data came from the live catalog or local cache.
+The cache does not expire automatically.
+Keep the same browser profile and local URL, including the port, to reuse it.
+For local testing, load the catalog once, then reload without refreshing.
+App images can still require network access.
 
-# The server includes:
-# - Automatic port detection
-# - Hot reloading support
-# - CORS headers for development
-# - Static file serving
-```
+Refresh requests a new catalog and replaces the saved data after a successful load.
+Failed refreshes retain the previous data.
+Partial loads retain their warning in the cache.
+Cache failures show a notice.
+If browser storage is unavailable or cleared, the next reload requests catalog data again.
 
-### Production Build & Deployment
+## Check
 
-The project includes a comprehensive build system that creates optimized, minified files for production deployment:
-
-```powershell
-# Build production version
-.\build-production.ps1
-
-# Features:
-# - Clean release directory creation
-# - HTML minification with comment removal
-# - CSS import resolution and minification
-# - Advanced JavaScript minification with template string preservation
-# - Windows line ending standardization for Git compatibility
-# - 24%+ file size reduction
-```
-
-#### Build Process Details
-
-**HTML Minification**:
-- Removes HTML and JavaScript comments
-- Eliminates extra whitespace between tags
-- Preserves critical spacing for JavaScript functionality
-
-**CSS Processing**:
-- Resolves `@import` statements and combines files
-- Minifies all CSS with space and comment removal
-- Maintains proper syntax and functionality
-
-**JavaScript Minification**:
-- Removes single-line and multi-line comments
-- Eliminates unnecessary whitespace and line breaks
-- **Template String Preservation**: Special handling to maintain spacing in template literals (e.g., `${count} data sources`)
-- Removes spaces around operators while preserving readability
-- Post-processing to fix template string spacing issues
-
-**Output Structure**:
-```
-docs/
-├── index.html              # Minified HTML
-├── main.css                # Combined and minified CSS
-├── css/                    # Individual minified CSS files
-└── js/                     # Minified JavaScript modules
+```sh
+npm run lint
+npm run build
+npx playwright install chromium
+npm test
 ```
 
-**Build Benefits**:
-- **Size Reduction**: ~25% smaller file sizes for faster loading
-- **Clean Deployment**: Fresh docs directory for each build
-- **Git Compatibility**: Standardized Windows line endings
-- **Preserved Functionality**: Template strings and critical spacing maintained
-- **Error Prevention**: Robust minification that doesn't break JavaScript
+Browser tests use synthetic catalog responses.
+They check production output without sending requests to Microsoft.
+They do not prove live service availability.
 
-#### Deployment
+## Publish
 
-The development server automatically serves from the `docs/` directory and runs the build process:
+`npm run build` writes production files to `docs/`.
+The relative asset paths support deployment under a repository subpath.
 
-```powershell
-# Start server (automatically builds and serves production files)
-.\start-server.ps1
+```sh
+npm run preview
 ```
 
-For manual deployment to web servers, simply copy the contents of the `docs/` folder to your web root directory.
+On macOS, run:
 
-### Validation
-```powershell
-# Open validation suite
-# Navigate to: http://localhost:8080/validate.html
-# Runs comprehensive tests on all modules
+```sh
+./start-server.sh
+./start-server.sh --no-build --port 3000
 ```
 
-### Code Organization
-- **Modular Architecture**: Each JavaScript file handles specific functionality
-- **Event-Driven**: Loose coupling between modules via events
-- **Responsive Design**: Mobile-first CSS with progressive enhancement
-- **Modern JavaScript**: ES6+ features with broad browser compatibility
+The launcher builds production files and opens `http://127.0.0.1:8080`.
+Use `--no-build` to serve existing files.
+Use `--no-open` to prevent the browser from opening.
+`--clean` remains compatible. Vite cleans `docs/` during each build.
+An occupied port stops the launcher instead of selecting another port.
+Run the launcher from any directory.
+PowerShell is not required on macOS.
 
-## 🔍 Usage Examples
+Windows users can still run `.\start-server.ps1` after `npm ci`.
+The build wrapper also uses Vite.
+The server serves binary font files without text conversion.
 
-### Basic App Search
-1. Navigate to the **Search Apps** tab
-2. Enter search terms in the search box
-3. Use wildcards: `*teams*` to find all apps with "teams" in the name
-4. Click any app tile to view detailed information
+## Source
 
-### Entitlement Analysis
-1. Switch to the **Entitlement States** tab
-2. Select audience groups using the filter buttons
-3. Browse entitlement states organized by type
-4. Click state cards to see all apps with that entitlement
+| Path | Purpose |
+|---|---|
+| `src/App.jsx` | Dashboard, sidebar, settings, and appearance |
+| `src/components/AppDetails.jsx` | App details |
+| `src/components/AppGrid.jsx` | App cards with icon, name, and developer |
+| `src/components/AppIcon.jsx` | Shared app images and fallback icons |
+| `src/components/PresetQueries.jsx` | Preset query tiles |
+| `src/components/QueryEditor.jsx` | Simple AND and nested AND / OR query editors, preview, and Prompt TODO |
+| `src/components/ExportResults.jsx` | JSON download of the complete applied result set |
+| `src/components/ui/` | Generated shadcn components |
+| `src/lib/catalog.js` | React adapter for the existing loader and search |
+| `src/lib/catalog-cache.js` | Persistent catalog snapshots in IndexedDB |
+| `src/lib/preferences.js` | Browser preferences and storage checks |
+| `src/lib/preset-queries.js` | Capability evidence and unique app counts |
+| `src/lib/app-query.js` | Structured queries, validation, summaries, and variant-consistent evaluation |
+| `src/lib/app-definition-schema.js` | Known and observed property types, object paths, and array-item shapes |
+| `src/lib/saved-queries.js` | Named browser-local query persistence and storage feedback |
+| `js/data-loader.js` | Catalog loading and request caching |
+| `js/search-engine.js` | Existing search algorithms |
+| `tests/dashboard.spec.js` | Browser checks |
+| `tests/preset-queries.spec.js` | Capability and count checks |
+| `tests/app-query.spec.js` | Structured-query evaluation and validation checks |
+| `tests/advanced.spec.js` | Advanced workspace, mode switching, presets, and responsive browser checks |
 
-### Advanced Filtering
-1. Use the global audience filter to focus on specific groups
-2. Combine multiple audience selections
-3. Use "Select All" or "Clear All" for quick filtering
-4. View real-time statistics as filters change
-
-## 🤝 Contributing
-
-This project was built by LukasAgent, an AI Assistant. Contributions are welcome!
-
-### Development Guidelines
-- Follow the existing modular architecture
-- Maintain responsive design principles
-- Add appropriate error handling
-- Update validation tests for new features
-- Document any new configuration options
-
-## 🆘 Support
-
-### Troubleshooting
-- **Port conflicts**: The server automatically detects and reuses existing servers
-- **Data loading issues**: Check browser console for detailed error messages
-- **Search not working**: Ensure catalog data is loaded first
-- **Performance issues**: Clear browser cache and reload
-
-### Known Limitations
-- Requires modern browser with JavaScript enabled
-- Large datasets may impact initial loading time
-- Network connectivity required for external catalog sources
-
-## 🎯 Roadmap
-
-### Recently Completed ✅
-- Enhanced Definition tab with version-based grouping
-- Comprehensive property formatting with 8+ data types
-- Collapsible interface for better UX
-- Modular CSS architecture for maintainability
-- Responsive design improvements
-- Professional styling throughout the application
-- **Production build system with advanced minification**
-- **Template string preservation in JavaScript minification**
-- **Clean entitlement bubbles showing only numbers**
-- **Fixed loading screen spacing issues**
-- **Automated deployment pipeline with build-first approach**
-
-### Upcoming Features 🚀
-- [ ] Export functionality for search results
-- [ ] Advanced analytics dashboard
-- [ ] Custom entitlement state definitions
-- [ ] Integration with Microsoft Graph API
-- [ ] Bulk operations for app management
-- [ ] Dark mode theme option
-- [ ] Advanced property filtering and search within definitions
-
----
-
-**Built with ❤️ by LukasAgent** - Enhancing Microsoft Teams app management through intelligent automation.
+The previous DOM renderers and CSS remain as reference files.
+The new entry point does not load them.
