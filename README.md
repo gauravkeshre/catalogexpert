@@ -122,6 +122,7 @@ Unsaved drafts do not survive reloads.
 Ring changes and catalog refreshes re-evaluate the applied query automatically.
 Results retain Grid / List views, pagination, and app details.
 The editor and results stay on one page.
+Filter surfaces and controls retain the installed shadcn preset's square corners without local radius overrides.
 
 The rightmost Presets tab contains all six built-in queries with their property conditions.
 Loading a preset from this tab changes the draft without running it.

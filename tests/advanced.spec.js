@@ -219,6 +219,39 @@ test("reference-style connector sits beside the second rule and controls the who
   await expectResults(page, ["Helper"])
 })
 
+test("filter surfaces and controls keep the shadcn preset corners across modes and viewports", async ({ page }) => {
+  const editor = page.getByRole("region", { name: "Query editor", exact: true })
+  async function expectPresetCorners() {
+    await expect(editor).toHaveCSS("border-radius", "0px")
+    const surfaces = editor.locator(':scope, [role="group"], [data-slot="select-trigger"], [data-slot="input"], [data-slot="button"], .border-dashed, .border-t')
+    const radii = await surfaces.evaluateAll((elements) => elements.map((element) => {
+      const style = getComputedStyle(element)
+      return [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomLeftRadius, style.borderBottomRightRadius]
+    }))
+    expect(radii.length).toBeGreaterThan(5)
+    for (const corners of radii) expect(corners).toEqual(["0px", "0px", "0px", "0px"])
+  }
+
+  await expectPresetCorners()
+  await addCondition(page, "Developer", "Microsoft")
+  await expectPresetCorners()
+  await page.getByRole("tab", { name: "Advanced", exact: true }).click()
+  await page.getByRole("button", { name: "Add group", exact: true }).click()
+  await choose(page, "Field 2.1", "bots")
+  await page.getByRole("spinbutton", { name: "Value 2.1", exact: true }).fill("1")
+  await expect(page.getByRole("group", { name: "Array items 2.1", exact: true })).toBeVisible()
+
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 })
+    await expectPresetCorners()
+    await page.getByRole("combobox", { name: "Field 1", exact: true }).click()
+    await expect(page.locator('[data-slot="select-content"][data-open]')).toHaveCSS("border-radius", "0px")
+    await page.keyboard.press("Escape")
+    await expect(page.getByRole("listbox")).toHaveCount(0)
+    expect(await page.locator("main").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+  }
+})
+
 test("clearing a nested filter preserves sibling filters and applied results", async ({ page }) => {
   await addCondition(page, "Developer", "Microsoft")
   await page.getByRole("tab", { name: "Advanced", exact: true }).click()
