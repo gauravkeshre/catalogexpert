@@ -21,6 +21,7 @@ import { defaultPreferences, usePreferences } from "@/lib/preferences"
 import AppDetails from "@/components/AppDetails"
 import AppGrid from "@/components/AppGrid"
 import AppIcon from "@/components/AppIcon"
+import PropertyVisibilitySettings from "@/components/PropertyVisibilitySettings"
 import PresetQueries from "@/components/PresetQueries"
 import QueryEditor from "@/components/QueryEditor"
 import ExportResults from "@/components/ExportResults"
@@ -94,9 +95,9 @@ function Sidebar({ page, navigate, preferences, updatePreferences }) {
   )
 }
 
-function DisplaySettings({ preferences, updatePreferences }) {
+function DisplaySettings({ preferences, updatePreferences, schema }) {
   const fields = [
-    ["showRings", "Ring information", "Show audience filters and ring labels. Hidden rings do not filter results. Raw JSON keeps all source fields."],
+    ["showRings", "Ring information", "Show audience filters and ring labels. Hidden rings do not filter results. Ring visibility alone does not remove fields from JSON."],
     ["showStats", "Catalog statistics", "Show app, source, and entitlement totals above results."],
     ["showDescriptions", "App descriptions", "Show descriptions in the library."],
     ["showIds", "App identifiers", "Show app IDs and Office asset IDs in the library."],
@@ -120,6 +121,8 @@ function DisplaySettings({ preferences, updatePreferences }) {
           ))}
         </CardContent>
       </Card>
+      <PropertyVisibilitySettings schema={schema} mutedProperties={preferences.mutedProperties}
+        onChange={(mutedProperties) => updatePreferences({ mutedProperties })} />
       <p className="text-xs text-muted-foreground">Settings stay in this browser. They do not change catalog data.</p>
       <Button variant="outline" onClick={() => updatePreferences(defaultPreferences)}>Reset display settings</Button>
     </section>
@@ -446,7 +449,7 @@ export default function App() {
             {preferenceError && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-3 text-sm">{preferenceError}</p>}
             {page !== "advanced" && saved.error && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-3 text-sm">{saved.error}</p>}
             {data.cacheWarning && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-3 text-sm">{data.cacheWarning}</p>}
-            {page === "settings" ? <DisplaySettings preferences={preferences} updatePreferences={changePreferences} />
+            {page === "settings" ? <DisplaySettings preferences={preferences} updatePreferences={changePreferences} schema={querySchema} />
               : page === "advanced" ? <section aria-labelledby="advanced-title" className="min-h-64 space-y-6">
                 <CatalogSummary data={data} count={queryResults.length} page="advanced" />
                 <CatalogFeedback data={data} showRings={preferences.showRings} />

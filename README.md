@@ -160,27 +160,35 @@ The view choice stays in browser storage.
 
 The library shows 25 apps per page.
 Search supports app names, IDs, developers, Office asset IDs, versions, descriptions, wildcards, AND, and OR.
-App details retain summary, versions, entitlements, complete properties, technical fields, and JSON.
+App details contain Summary, Versions, Entitlements, Definition, Technical, and JSON tabs.
 Click anywhere on an app row to open its details, or use the app name or arrow button with the keyboard.
 The summary provides an App ID copy button and badges for app capabilities, including Teams ownership.
-The JSON tab can copy the complete selected variant, including fields hidden by preferences.
+The JSON tab displays and copies the selected variant without muted properties.
 Copy actions report success or clipboard access errors.
 The Definition tab presents nested key-value pairs with quote-left icons for values, braces for objects, and brackets for arrays.
 Version Information appears first, followed by Core App Properties.
 Other Properties retains fields without a named group.
 Groups show only available fields, with each property shown once.
+Groups start expanded. Click a group heading to collapse it, or use Enter or Space.
 Ring preferences also apply to Definition fields.
 Quote-left uses Font Awesome Free Solid; the Pro Duotone style is not bundled.
 Objects and arrays expand to reveal typed child properties.
 Search keys, values, or paths to reveal matching fields and their ancestors, or use the expand and collapse controls to browse.
 Definition search covers all groups and hides groups without matching fields.
+Search opens matching groups. Clear search restores previous group states and returns focus to the search field.
+Expand all and Collapse all control groups and nested objects.
 The entitlement page provides state groups and a state reference.
 Enable statistics to show a compact strip of totals and inspect loaded source URLs.
 
 Settings control ring information, statistics, descriptions, identifiers, and entitlement summaries.
 Ring information is off by default.
 Hidden rings do not restrict results.
-Raw JSON retains source fields regardless of preferences.
+Under App detail properties, search property names or groups and select properties to mute.
+Selections hide exact top-level keys and their nested values across detail tabs, variant labels, JSON, and copied JSON.
+Muting does not change Library results, queries, exports, or cached catalog data.
+Muting is a display preference, not a security control.
+Restore all properties clears muting. Reset display settings also clears muting.
+Other display settings do not remove source fields from JSON.
 Settings stay in browser storage.
 Storage failures show a notice.
 

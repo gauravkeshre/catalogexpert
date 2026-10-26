@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useId, useState } from "react"
 import CopyButton from "@/components/CopyButton"
 import DefinitionExplorer from "@/components/DefinitionExplorer"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -18,6 +19,7 @@ function Value({ value }) {
 }
 
 function Properties({ entries }) {
+  if (!entries.length) return <p className="py-3 text-sm text-muted-foreground">No fields to show.</p>
   return <dl className="divide-y">{entries.map(([key, value, action]) => (
     <div key={key} className="grid gap-2 py-3 sm:grid-cols-[12rem_minmax(0,1fr)]">
       <dt className="text-xs font-medium break-all text-muted-foreground">{key}</dt>
@@ -30,23 +32,45 @@ function Properties({ entries }) {
   ))}</dl>
 }
 
+function MutedProperties({ entries }) {
+  const panelId = useId()
+  const [expanded, setExpanded] = useState(false)
+  if (!entries.length) return null
+  return (
+    <div className="min-w-0 border-t pt-3">
+      <Button variant="link" size="sm" className="h-auto max-w-full px-0 whitespace-normal text-left"
+        aria-expanded={expanded} aria-controls={panelId} onClick={() => setExpanded((previous) => !previous)}>
+        {expanded ? "Hide" : "Show"} muted properties ({entries.length})
+      </Button>
+      <div id={panelId} role="region" aria-label="Muted properties" hidden={!expanded}>
+        {expanded && <>
+          <p className="mt-3 text-xs text-muted-foreground">Shown temporarily. Saved settings and copied JSON stay unchanged.</p>
+          <Properties entries={entries} />
+        </>}
+      </div>
+    </div>
+  )
+}
+
 function DefinitionDetails({ appId, audienceMap, entitlements, preferences }) {
   const [variant, setVariant] = useState(audienceMap.keys().next().value)
-  const app = audienceMap.get(variant) || audienceMap.values().next().value
+  const sourceApp = audienceMap.get(variant) || audienceMap.values().next().value
+  const muted = new Set(preferences.mutedProperties)
+  const app = Object.fromEntries(Object.entries(sourceApp).filter(([key]) => !muted.has(key)))
+  const mutedEntries = Object.entries(sourceApp).filter(([key]) => muted.has(key))
+  const showRings = preferences.showRings && !muted.has("audienceGroup")
   const entries = appEntries(entitlements, appId)
   const variants = [...audienceMap]
-  const rawJson = JSON.stringify(app, null, 2)
+  const visibleJson = JSON.stringify(app, null, 2)
   const variantItems = variants.map(([ring, definition], index) => ({
     value: ring,
-    label: preferences.showRings
-      ? `${audienceLabel(ring)} · ${definition.version || "Unknown version"}`
-      : `Variant ${index + 1} · ${definition.version || "Unknown version"}`,
+    label: `${showRings ? audienceLabel(ring) : `Variant ${index + 1}`}${muted.has("version") ? "" : ` · ${definition.version || "Unknown version"}`}`,
   }))
   return (
     <>
       <DialogHeader>
-        <DialogTitle className="pr-8 break-words">{app.name || appId}</DialogTitle>
-        <DialogDescription>{app.developerName || "Unknown developer"}</DialogDescription>
+        <DialogTitle className="pr-8 break-words">{app.name || (muted.has("id") ? "App details" : appId)}</DialogTitle>
+        <DialogDescription>{muted.has("developerName") ? "Selected app details" : app.developerName || "Unknown developer"}</DialogDescription>
       </DialogHeader>
       <Select value={variant} onValueChange={setVariant} items={variantItems}>
         <SelectTrigger aria-label="App variant" className="max-w-full"><SelectValue /></SelectTrigger>
@@ -67,7 +91,10 @@ function DefinitionDetails({ appId, audienceMap, entitlements, preferences }) {
         </div>
         <TabsContent value="summary" className="space-y-5">
           {app.description && <p className="text-sm leading-relaxed text-muted-foreground">{app.description}</p>}
-          <Properties entries={[["App ID", appId, <CopyButton value={appId} label="app ID" iconOnly />], ["Version", app.version], ["Developer", app.developerName]]} />
+          <Properties entries={[
+            ["id", "App ID", appId, <CopyButton value={appId} label="app ID" iconOnly />],
+            ["version", "Version", app.version], ["developerName", "Developer", app.developerName],
+          ].filter(([key]) => !muted.has(key)).map(([, ...entry]) => entry)} />
           <div className="flex flex-wrap gap-2">
             {[["isCoreApp", "Core app"], ["isTeamsOwned", "Teams owned"], ["isPinnable", "Pinnable"], ["isPreinstallable", "Preinstallable"], ["isBlockable", "Blockable"], ["isFullTrust", "Full trust"]]
               .filter(([key]) => app[key]).map(([key, label]) => <Badge variant="secondary" key={key}>{label}</Badge>)}
@@ -77,19 +104,19 @@ function DefinitionDetails({ appId, audienceMap, entitlements, preferences }) {
         </TabsContent>
         <TabsContent value="versions">
           <Table aria-label="App versions">
-            <TableHeader><TableRow>{preferences.showRings && <TableHead>Ring</TableHead>}<TableHead>Variant</TableHead><TableHead>Version</TableHead><TableHead>Source</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow>{showRings && <TableHead>Ring</TableHead>}<TableHead>Variant</TableHead>{!muted.has("version") && <TableHead>Version</TableHead>}{!muted.has("sourceType") && <TableHead>Source</TableHead>}</TableRow></TableHeader>
             <TableBody>{variants.map(([ring, definition], index) => (
-              <TableRow key={ring}>{preferences.showRings && <TableCell>{audienceLabel(ring)}</TableCell>}
-                <TableCell>{index + 1}</TableCell><TableCell>{definition.version || "Unknown"}</TableCell><TableCell>{definition.sourceType || "Unknown"}</TableCell>
+              <TableRow key={ring}>{showRings && <TableCell>{audienceLabel(ring)}</TableCell>}
+                <TableCell>{index + 1}</TableCell>{!muted.has("version") && <TableCell>{definition.version || "Unknown"}</TableCell>}{!muted.has("sourceType") && <TableCell>{definition.sourceType || "Unknown"}</TableCell>}
               </TableRow>
             ))}</TableBody>
           </Table>
         </TabsContent>
         <TabsContent value="entitlements">
           {entries.length ? <Table aria-label="App entitlements">
-            <TableHeader><TableRow>{preferences.showRings && <TableHead>Ring</TableHead>}<TableHead>Scope</TableHead><TableHead>Context</TableHead><TableHead>State</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow>{showRings && <TableHead>Ring</TableHead>}<TableHead>Scope</TableHead><TableHead>Context</TableHead><TableHead>State</TableHead></TableRow></TableHeader>
             <TableBody>{entries.map((entry) => <TableRow key={entry.key}>
-              {preferences.showRings && <TableCell>{audienceLabel(entry.ring)}</TableCell>}
+              {showRings && <TableCell>{audienceLabel(entry.ring)}</TableCell>}
               <TableCell>{entry.scope}</TableCell><TableCell>{entry.context}</TableCell><TableCell>{entry.state || "Unknown"}</TableCell>
             </TableRow>)}</TableBody>
           </Table> : <p className="py-8 text-sm text-muted-foreground">No configured entitlements.</p>}
@@ -99,21 +126,22 @@ function DefinitionDetails({ appId, audienceMap, entitlements, preferences }) {
         </TabsContent>
         <TabsContent value="technical">
           <Properties entries={[
-            ["Manifest version", app.manifestVersion],
-            ["Office asset ID", app.officeAssetId],
-            ["Last updated", app.lastUpdatedAt],
-            ["Developer URL", app.developerUrl],
-            ["Source type", app.sourceType],
-          ]} />
+            ["manifestVersion", "Manifest version", app.manifestVersion],
+            ["officeAssetId", "Office asset ID", app.officeAssetId],
+            ["lastUpdatedAt", "Last updated", app.lastUpdatedAt],
+            ["developerUrl", "Developer URL", app.developerUrl],
+            ["sourceType", "Source type", app.sourceType],
+          ].filter(([key]) => !muted.has(key)).map(([, ...entry]) => entry)} />
         </TabsContent>
         <TabsContent value="json" className="space-y-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <p className="text-xs text-muted-foreground">Raw JSON keeps all source fields, regardless of display settings.</p>
-            <CopyButton value={rawJson} label="JSON" />
+            <p className="text-xs text-muted-foreground">JSON omits muted properties. Other display settings do not remove source fields.</p>
+            <CopyButton value={visibleJson} label="JSON" />
           </div>
-          <pre className="max-h-[50dvh] overflow-auto border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap break-all">{rawJson}</pre>
+          <pre className="max-h-[50dvh] overflow-auto border bg-muted/50 p-4 font-mono text-xs whitespace-pre-wrap break-all">{visibleJson}</pre>
         </TabsContent>
       </Tabs>
+      <MutedProperties key={variant} entries={mutedEntries} />
     </>
   )
 }

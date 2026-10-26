@@ -10,6 +10,7 @@ export const defaultPreferences = {
   showDescriptions: false,
   showIds: false,
   showEntitlements: true,
+  mutedProperties: [],
   queryTiles: {
     desktop: defaultPresetQueries.map(({ id }) => `preset:${id}`),
     mobile: defaultPresetQueries.slice(0, 4).map(({ id }) => `preset:${id}`),
@@ -29,7 +30,13 @@ function readPreferences() {
     }
     const preferences = { ...defaultPreferences }
     for (const key of Object.keys(preferences)) {
-      if (key === "queryTiles" && saved[key] !== undefined) {
+      if (key === "mutedProperties" && saved[key] !== undefined) {
+        if (!Array.isArray(saved[key]) || !saved[key].every((property) => typeof property === "string")
+          || new Set(saved[key]).size !== saved[key].length) {
+          throw new Error("Invalid muted property settings")
+        }
+        preferences[key] = saved[key]
+      } else if (key === "queryTiles" && saved[key] !== undefined) {
         if (!saved[key] || !validTileSelection(saved[key].desktop, 6) || !validTileSelection(saved[key].mobile, 4)) {
           throw new Error("Invalid query tile settings")
         }

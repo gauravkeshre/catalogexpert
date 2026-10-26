@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useId, useMemo, useRef, useState } from "react"
 import { IconBraces, IconBrackets, IconChevronRight, IconSearch } from "@tabler/icons-react"
 import { faQuoteLeft } from "@fortawesome/free-solid-svg-icons/faQuoteLeft"
 import { Button } from "@/components/ui/button"
@@ -83,14 +83,18 @@ function DirectoryNode({ node, expanded, onToggle }) {
 }
 
 export default function DefinitionExplorer({ value }) {
+  const disclosureId = useId()
+  const searchInput = useRef(null)
   const [search, setSearch] = useState("")
   const [openPaths, setOpenPaths] = useState(new Set())
+  const [closedGroups, setClosedGroups] = useState(new Set())
   const [closedMatches, setClosedMatches] = useState(new Set())
   const root = useMemo(() => describe(value, "$", "$"), [value])
   const nodes = root.folder ? root.children : [root]
   const query = search.trim().toLowerCase()
   const visible = query ? matchingNodes(nodes, query) : nodes
   const groups = groupDefinitionNodes(visible)
+  const groupPaths = groupDefinitionNodes(nodes).map(([label]) => `group:${label}`)
   const folderPaths = []
   function collectFolders(children) {
     children.forEach((node) => {
@@ -100,8 +104,7 @@ export default function DefinitionExplorer({ value }) {
   }
   collectFolders(nodes)
   const expanded = (path) => query ? !closedMatches.has(path) : openPaths.has(path)
-  function toggle(path) {
-    const setter = query ? setClosedMatches : setOpenPaths
+  function toggle(path, setter = query ? setClosedMatches : setOpenPaths) {
     setter((previous) => {
       const next = new Set(previous)
       if (next.has(path)) next.delete(path)
@@ -119,6 +122,7 @@ export default function DefinitionExplorer({ value }) {
         <div className="relative min-w-0 basis-48 grow">
           <IconSearch aria-hidden="true" className="pointer-events-none absolute top-3 left-2 size-4 text-muted-foreground" />
           <Input
+            ref={searchInput}
             aria-label="Search definition"
             placeholder="Search keys, values, or paths…"
             value={search}
@@ -126,23 +130,33 @@ export default function DefinitionExplorer({ value }) {
             className="pl-8"
           />
         </div>
-        {search && <Button variant="ghost" size="xs" onClick={() => updateSearch("")}>Clear search</Button>}
+        {search && <Button variant="ghost" size="xs" onClick={() => { searchInput.current.focus(); updateSearch("") }}>Clear search</Button>}
         <div className="flex flex-wrap gap-1">
-          <Button variant="outline" size="xs" disabled={!folderPaths.length} onClick={() => { setOpenPaths(new Set(folderPaths)); setClosedMatches(new Set()) }}>Expand all</Button>
-          <Button variant="outline" size="xs" disabled={!folderPaths.length} onClick={() => { setOpenPaths(new Set()); setClosedMatches(new Set(folderPaths)) }}>Collapse all</Button>
+          <Button variant="outline" size="xs" disabled={!groups.length} onClick={() => { setOpenPaths(new Set(folderPaths)); setClosedGroups(new Set()); setClosedMatches(new Set()) }}>Expand all</Button>
+          <Button variant="outline" size="xs" disabled={!groups.length} onClick={() => { setOpenPaths(new Set()); setClosedGroups(new Set(groupPaths)); setClosedMatches(new Set([...folderPaths, ...groupPaths])) }}>Collapse all</Button>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">Browse keys and values. Expand an object or array to see its nested properties.</p>
+      <p className="text-xs text-muted-foreground">Collapse a group to hide its properties. Expand an object or array to see nested values. Search opens matching groups.</p>
       <div className="min-w-0 space-y-4">
         {visible.length ? (
-          groups.map(([label, children]) => (
-            <section key={label} aria-label={label} className="min-w-0 border bg-muted/10">
-              <h3 className="border-b border-l-2 border-l-primary bg-muted/50 px-3 py-2.5 text-sm font-semibold">{label}</h3>
-              <ul className="min-w-0 p-1">
+          groups.map(([label, children]) => {
+            const path = `group:${label}`
+            const isOpen = query ? !closedMatches.has(path) : !closedGroups.has(path)
+            const panelId = `${disclosureId}-${encodeURIComponent(label)}`
+            return <section key={label} aria-label={label} className="min-w-0 border bg-muted/10">
+              <h3>
+                <button type="button" aria-expanded={isOpen} aria-controls={panelId}
+                  onClick={() => toggle(path, query ? setClosedMatches : setClosedGroups)}
+                  className="flex w-full items-center gap-2 border-b border-l-2 border-l-primary bg-muted/50 px-3 py-2.5 text-left text-sm font-semibold hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
+                  <IconChevronRight aria-hidden="true" className={`size-3 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                  <span className="min-w-0">{label}</span>
+                </button>
+              </h3>
+              <ul id={panelId} hidden={!isOpen} className="min-w-0 p-1">
                 {children.map((node) => <DirectoryNode key={node.path} node={node} expanded={expanded} onToggle={toggle} />)}
               </ul>
             </section>
-          ))
+          })
         ) : <p role="status" className="border bg-muted/10 px-3 py-8 text-center text-sm text-muted-foreground">{query ? "No matching properties." : `Empty ${root.type}.`}</p>}
       </div>
     </section>
