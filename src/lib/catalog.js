@@ -3,6 +3,7 @@ import { DataLoader } from "../../js/data-loader.js"
 import { SearchEngine } from "../../js/search-engine.js"
 import { readCatalogCache, writeCatalogCache } from "./catalog-cache"
 import { appDefinitionSchema, buildAppDefinitionSchema } from "./app-definition-schema"
+import { recordStatistics } from "./statistics"
 
 let snapshot = {
   definitions: new Map(),
@@ -17,6 +18,8 @@ let snapshot = {
   fromCache: false,
   capturedAt: null,
   querySchema: appDefinitionSchema,
+  statisticsHistory: [],
+  statisticsWarning: "",
 }
 const listeners = new Set()
 
@@ -25,6 +28,15 @@ function publish(changes) {
     ? buildAppDefinitionSchema(changes.definitions, snapshot.querySchema) : snapshot.querySchema
   snapshot = { ...snapshot, ...changes, querySchema }
   listeners.forEach((listener) => listener())
+}
+
+function statisticsSnapshot(data) {
+  try {
+    return { statisticsHistory: recordStatistics(data), statisticsWarning: "" }
+  } catch (error) {
+    console.error("Cannot save catalog statistics history.", error)
+    return { statisticsHistory: [], statisticsWarning: "Cannot read or save statistics history in this browser. Current counts are still available." }
+  }
 }
 
 export const catalog = {
@@ -40,7 +52,7 @@ export const catalog = {
       try {
         const saved = await readCatalogCache()
         if (saved) {
-          publish({ ...saved, fromCache: true, loading: false, progress: 100, message: "Loaded the local catalog." })
+          publish({ ...saved, ...statisticsSnapshot(saved), fromCache: true, loading: false, progress: 100, message: "Loaded the local catalog." })
           return
         }
       } catch (error) {
@@ -90,6 +102,7 @@ export const catalog = {
         }
         publish({
           ...result,
+          ...statisticsSnapshot(result),
           fromCache: false,
           cacheWarning,
           loading: false,

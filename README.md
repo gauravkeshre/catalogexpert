@@ -22,7 +22,7 @@ The interface uses React, Vite, Tailwind CSS, and shadcn preset `b3Sm9Q7NQ`.
 It retains Sera's square corners, button typography, and underlined fields.
 Lime controls use darker text, as requested.
 
-The sidebar contains Advanced, Library, and Entitlement states.
+The sidebar contains Advanced, Statistics, Library, and Entitlement states.
 Advanced is the query workspace, available without selecting a preset.
 Settings and the Light / Dark / System controls sit at the bottom.
 Narrow windows use a navigation drawer.
@@ -63,6 +63,33 @@ and messaging-extension command `taskInfo.url` fields, including their catalog e
 The generated query uses editable property conditions, not a new derived capability.
 This is a URL-based heuristic: it does not certify SPFx packaging, and apps using hardcoded tenant URLs can be missed.
 The SharePoint-hosted URL patterns follow [Microsoft's SPFx deployment guidance](https://learn.microsoft.com/en-us/sharepoint/dev/spfx/deployment-spfx-teams-solutions).
+
+### Statistics
+
+Statistics starts with All, covering the complete catalog, plus capability tabs for Custom Engine Agents (CEA),
+Declarative Agents (DA), Bots, Tabs, Bot Only Apps, Message Extensions, and SPFx Apps.
+The same filter editor as Advanced supports property conditions, nested logic, presets, and saved queries.
+Statistics drafts and applied queries are independent of Advanced and survive navigation.
+Navigation opens immediately with an accessible shimmer while catalog data or background calculations are pending.
+Statistics calculations run in a Web Worker; leaving the page or changing applied filters cancels obsolete work.
+Reduced-motion settings disable shimmer animation. Worker failures show a retry action rather than an indefinite loader.
+Conditions apply within the capability's matching variants; ring filters also apply when enabled.
+Draft edits do not change numbers until Run query. Clear query clears the draft; run it to remove applied conditions.
+
+The dashboard shows unique apps, CEA and DA counts, matching variants, developers, and apps with entitlements.
+Capability bars can overlap: an app may support several capabilities.
+Group by any scalar property, nested scalar property, or primitive array value, or by entitlement state and visible rings.
+Property bars, a pie chart, and a full count table count each app once per group across matching variants.
+Missing values appear as Not specified. Multi-value groups can overlap; pie slices show shares of group memberships.
+Charts combine smaller groups; the table retains every group in pages of 100 to keep rendering responsive.
+
+Growth tracks observed net count changes, not creation dates, update activity, usage, or adoption.
+Complete catalog loads save up to 90 timestamped aggregate snapshots in this browser, including ring and capability counts.
+The first snapshot establishes a baseline; refresh later to compare totals and CEA, DA, and other capability trends.
+Cached reloads do not duplicate snapshots. Only identical source sets and matching rings are compared.
+Partial loads do not enter history, and growth is paused until a complete refresh succeeds.
+Historical growth is unavailable for custom property filters because history stores aggregate counts, not old app definitions.
+History does not sync across devices; clearing browser storage removes it. Storage failures show a visible notice.
 
 ### Advanced queries
 

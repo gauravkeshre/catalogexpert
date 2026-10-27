@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import {
   IconAdjustments, IconApps, IconArrowRight, IconChevronLeft, IconChevronRight,
   IconCode, IconLayoutDashboard, IconLayoutGrid, IconList, IconMenu2, IconMoon, IconRefresh,
-  IconSearch, IconSettings, IconShieldCheck, IconSun, IconDeviceDesktop,
+  IconSearch, IconSettings, IconShieldCheck, IconSun, IconDeviceDesktop, IconChartBar,
 } from "@tabler/icons-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { appEntries, audienceLabel, catalog, findApps, groupStates } from "@/lib/catalog"
 import { defaultPreferences, usePreferences } from "@/lib/preferences"
 import AppDetails from "@/components/AppDetails"
@@ -25,12 +26,15 @@ import PropertyVisibilitySettings from "@/components/PropertyVisibilitySettings"
 import PresetQueries from "@/components/PresetQueries"
 import QueryEditor from "@/components/QueryEditor"
 import ExportResults from "@/components/ExportResults"
-import { countPresetQueries } from "@/lib/preset-queries"
+import Statistics, { StatisticsLoading } from "@/components/Statistics"
+import { countPresetQueries, presetQueries } from "@/lib/preset-queries"
 import { canUseSimple, createGroup, describeQuery, filterQueryDefinitions } from "@/lib/app-query"
 import { useSavedQueries } from "@/lib/saved-queries"
+import { useStatistics } from "@/lib/use-statistics"
 
 const pages = [
   { id: "advanced", label: "Advanced", icon: IconCode },
+  { id: "statistics", label: "Statistics", icon: IconChartBar },
   { id: "library", label: "Library", icon: IconLayoutDashboard },
   { id: "entitlements", label: "Entitlement states", icon: IconShieldCheck },
 ]
@@ -300,14 +304,15 @@ function RefreshCatalog({ data }) {
   )
 }
 
-function CatalogSummary({ data, count, page }) {
+function CatalogSummary({ data, count, page, pending = false }) {
   return (
     <div className="flex items-center justify-between gap-3" data-testid={`${page}-summary`}>
-      <h2 id={`${page}-title`} className="sr-only">{page === "library" ? "Library" : "Advanced"}</h2>
+      <h2 id={`${page}-title`} className="sr-only">{page === "library" ? "Library" : page === "statistics" ? "Statistics" : "Advanced"}</h2>
       <p role="status" aria-label="Catalog data source"
         title={data.fromCache ? "Local cache" : "Live catalog"}
         className="min-w-0 truncate text-sm text-muted-foreground">
-        Showing {count.toLocaleString()} of {data.definitions.size.toLocaleString()} apps,{" "}
+        {count === null ? pending ? "Loading statistics, " : "Statistics unavailable, "
+          : `Showing ${count.toLocaleString()} of ${data.definitions.size.toLocaleString()} apps, `}
         {data.capturedAt
           ? <>synced on <time dateTime={data.capturedAt.toISOString()}>{data.capturedAt.toLocaleString()}</time></>
           : "not yet synced"}
@@ -356,6 +361,11 @@ export default function App() {
   const [appQuery, setAppQuery] = useState(createGroup)
   const [appliedQuery, setAppliedQuery] = useState(null)
   const [editorMode, setEditorMode] = useState("simple")
+  const [statisticsType, setStatisticsType] = useState("all")
+  const [statisticsQuery, setStatisticsQuery] = useState(createGroup)
+  const [statisticsAppliedQuery, setStatisticsAppliedQuery] = useState(null)
+  const [statisticsMode, setStatisticsMode] = useState("simple")
+  const [statisticsGrouping, setStatisticsGrouping] = useState(JSON.stringify(["developerName"]))
   const querySchema = data.querySchema
   const mainRef = useRef(null)
   const scrollPositions = useRef({})
@@ -391,6 +401,14 @@ export default function App() {
   const queryResults = useMemo(() => findApps(queryDefinitions, data.entitlements, "", effectiveAudience),
     [queryDefinitions, data.entitlements, effectiveAudience])
   const queryDirty = appliedQuery !== null && JSON.stringify(appQuery) !== JSON.stringify(appliedQuery)
+  const statistics = useStatistics({
+    enabled: page === "statistics" && !data.loading && Boolean(data.capturedAt),
+    definitions: data.definitions, entitlements: data.entitlements, schema: querySchema,
+    query: statisticsAppliedQuery, audience: effectiveAudience, type: statisticsType,
+    grouping: !preferences.showRings && statisticsGrouping === "$rings" ? JSON.stringify(["developerName"]) : statisticsGrouping,
+  })
+  const statisticsLoading = data.loading || (!data.capturedAt && !data.error) || statistics.pending
+  const statisticsDirty = statisticsAppliedQuery !== null && JSON.stringify(statisticsQuery) !== JSON.stringify(statisticsAppliedQuery)
   const stateApps = [...(groups.find(([state]) => state === selectedState)?.[1] || [])]
 
   function navigate(nextPage) {
@@ -447,9 +465,44 @@ export default function App() {
         <main ref={mainRef} id="workspace" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto p-4 outline-none sm:p-8">
           <div className="mx-auto max-w-6xl space-y-6">
             {preferenceError && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-3 text-sm">{preferenceError}</p>}
-            {page !== "advanced" && saved.error && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-3 text-sm">{saved.error}</p>}
+            {page !== "advanced" && page !== "statistics" && saved.error && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-3 text-sm">{saved.error}</p>}
             {data.cacheWarning && <p role="alert" className="border border-destructive/40 bg-destructive/5 p-3 text-sm">{data.cacheWarning}</p>}
             {page === "settings" ? <DisplaySettings preferences={preferences} updatePreferences={changePreferences} schema={querySchema} />
+              : page === "statistics" ? <section aria-labelledby="statistics-title" className="min-w-0 space-y-6">
+                <CatalogSummary data={data} count={statistics.result?.appCount ?? null} pending={statisticsLoading} page="statistics" />
+                <CatalogFeedback data={data} showRings={preferences.showRings} />
+                {preferences.showRings && <RingFilter audiences={audiences} value={audience} onChange={setAudience} />}
+                <Tabs value={statisticsType} onValueChange={setStatisticsType}>
+                  <div className="min-w-0 overflow-x-auto">
+                    <TabsList variant="line" aria-label="Statistics capability">
+                      <TabsTrigger value="all">All</TabsTrigger>
+                      {presetQueries.map(({ id, title }) => <TabsTrigger key={id} value={id}>{title}</TabsTrigger>)}
+                    </TabsList>
+                  </div>
+                </Tabs>
+                <QueryEditor query={statisticsQuery} onChange={setStatisticsQuery}
+                  mode={statisticsMode} onModeChange={setStatisticsMode} schema={querySchema} saved={saved}
+                  onLoadQuery={(next) => {
+                    setStatisticsQuery(next)
+                    setStatisticsMode(canUseSimple(next) ? "simple" : "advanced")
+                  }}
+                  loading={data.loading || !data.capturedAt} hasRun={statisticsAppliedQuery !== null} dirty={statisticsDirty}
+                  onRun={() => setStatisticsAppliedQuery(statisticsQuery)}
+                  onReset={() => { setStatisticsQuery(createGroup()); setStatisticsMode("simple") }} />
+                {statisticsAppliedQuery && <p className="text-xs leading-relaxed break-words text-muted-foreground" aria-label="Applied query">
+                  {describeQuery(statisticsAppliedQuery, querySchema)}
+                  {statisticsDirty && <Badge variant="outline" className="ml-2">Previous query</Badge>}
+                </p>}
+                {statisticsLoading ? <StatisticsLoading />
+                  : statistics.error ? <div role="alert" className="space-y-3 border border-destructive/40 p-4 text-sm">
+                    <p>{statistics.error}</p>
+                    <Button variant="outline" onClick={statistics.retry}>Retry statistics</Button>
+                  </div>
+                    : statistics.result && <Statistics summary={statistics.result}
+                      data={data} audience={effectiveAudience} type={statisticsType}
+                      filtered={Boolean(statisticsAppliedQuery?.children.length)}
+                      grouping={statisticsGrouping} onGroupingChange={setStatisticsGrouping} showRings={preferences.showRings} />}
+              </section>
               : page === "advanced" ? <section aria-labelledby="advanced-title" className="min-h-64 space-y-6">
                 <CatalogSummary data={data} count={queryResults.length} page="advanced" />
                 <CatalogFeedback data={data} showRings={preferences.showRings} />
